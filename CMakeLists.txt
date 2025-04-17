@@ -5,10 +5,17 @@
 cmake_minimum_required(VERSION 2.8.12)
 
 add_subdirectory(external/glfw)
-
 SET(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 
+
+include(FetchContent)
+FetchContent_Declare(
+    glm
+    GIT_REPOSITORY https://github.com/g-truc/glm.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(glm)
 
 # .h files
 list(APPEND HEADER_FILES
@@ -106,7 +113,7 @@ if(WIN32)
 		${CMAKE_SOURCE_DIR}/includes/glew/lib/Release/Win32
 	)
 
-    target_link_libraries(${TARGET_NAME} opengl32 glew32 glu32)
+    target_link_libraries(${TARGET_NAME} opengl32 glew32 glu32 glm)
 elseif(UNIX AND NOT APPLE)
 	list(APPEND LIBRARIES
 		${CMAKE_SOURCE_DIR}/includes/glew/lib/Release/x64
