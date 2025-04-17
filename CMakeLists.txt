@@ -20,13 +20,14 @@ FetchContent_MakeAvailable(glm)
 # .h files
 list(APPEND HEADER_FILES
 src/local.h
-src/shader.h
 )
 
 # .cpp files
 list(APPEND SOURCE_FILES
 src/main.cpp
 src/shader.cpp
+src/frame.cpp
+src/framebuffer.cpp
 )
 
 

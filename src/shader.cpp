@@ -1,4 +1,3 @@
-// ShaderLoader.cpp
 #include "local.h"
 
 #include <fstream>
@@ -6,7 +5,11 @@
 #include <iostream>
 #include <regex>
 
-GLuint load_shader(const char* path, GLenum shader_type) {
+void use_shader(GLuint shader) {
+	glUseProgram(shader);
+}
+
+static GLuint load_shader(const char* path, GLenum shader_type) {
     std::string shader_code;
 
     std::ifstream file_stream(path, std::ios::in);
@@ -28,7 +31,7 @@ GLuint load_shader(const char* path, GLenum shader_type) {
     return shader;
 }
 
-GLuint load_shaders(const char* vshader, const char* fshader) {
+static GLuint load_shaders(const char* vshader, const char* fshader) {
     GLuint vshader_id = load_shader(vshader, GL_VERTEX_SHADER);
     GLuint fshader_id = load_shader(fshader, GL_FRAGMENT_SHADER);
     GLint success = GL_FALSE;
@@ -69,4 +72,24 @@ GLuint load_shaders(const char* vshader, const char* fshader) {
     glDeleteShader(fshader_id);
 
     return program_id;
+}
+
+int init_shaders(void)
+{
+#ifdef __EMSCRIPTEN__
+	gamma_shader = load_shaders(
+		"src/glsl/gamma.vert",
+		"src/glsl/gamma.frag");
+	color_shader = load_shaders(
+		"src/glsl/color.vert",
+		"src/glsl/color.frag");
+#else
+	gamma_shader = load_shaders(
+		"gamma.vert",
+		"gamma.frag");
+	color_shader = load_shaders(
+		"color.vert",
+		"color.frag");
+#endif
+	return 0;
 }
