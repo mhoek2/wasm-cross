@@ -2,7 +2,8 @@
 #define LOCAL_H
 
 #ifndef __EMSCRIPTEN__
-#include <includes/glew/include/GL/glew.h>
+#define GLEW_STATIC
+#include <GL/glew.h>
 #endif
 
 #include <GLFW/glfw3.h>

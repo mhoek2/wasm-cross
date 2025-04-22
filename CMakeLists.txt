@@ -2,7 +2,7 @@
 #	CMAKE SETTINGS
 #-------------------------------------------------------------------------------
 
-cmake_minimum_required(VERSION 2.8.12)
+cmake_minimum_required(VERSION 3.10)
 
 add_subdirectory(external/glfw)
 SET(CMAKE_INCLUDE_CURRENT_DIR ON)
@@ -16,6 +16,7 @@ FetchContent_Declare(
     GIT_TAG master
 )
 FetchContent_MakeAvailable(glm)
+
 
 # .h files
 list(APPEND HEADER_FILES
@@ -93,28 +94,33 @@ endforeach()
 source_group(source REGULAR_EXPRESSION ".*[.]cpp")
 source_group(headers REGULAR_EXPRESSION ".*[.]h")
 
+
+#set(GLEW_LIB_PATH "${CMAKE_SOURCE_DIR}/includes/glew/lib/Release/Win32")
+#set(GLEW_DLL_PATH "${CMAKE_SOURCE_DIR}/includes/glew/bin/Release/Win32/glew32.dll")
+set(GLEW_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/external/glew/include)
+set(GLEW_SOURCE ${CMAKE_SOURCE_DIR}/external/glew/src/glew.c)
+message(STATUS "GLEW_INCLUDE_DIR: ${CMAKE_SOURCE_DIR}")
+message(STATUS "GLEW_SOURCE: ${CMAKE_SOURCE_DIR}")
+
+add_definitions(-DGLEW_STATIC) 
+
 include_directories(
     ${CMAKE_SOURCE_DIR}/includes
+    ${GLEW_INCLUDE_DIR}
     ${INCLUDE_DIRS}
 )
 
-set(GLEW_LIB_PATH "${CMAKE_SOURCE_DIR}/includes/glew/lib/Release/Win32")
-set(GLEW_DLL_PATH "${CMAKE_SOURCE_DIR}/includes/glew/bin/Release/Win32/glew32.dll")
-message(STATUS "GLEW_LIB_PATH: ${GLEW_LIB_PATH}")
-message(STATUS "GLEW_DLL_PATH: ${GLEW_DLL_PATH}")
+add_library(glew STATIC ${GLEW_SOURCE})
+target_include_directories(glew PUBLIC ${GLEW_INCLUDE_DIR})
 
-link_directories(${GLEW_LIB_PATH})
+#link_directories(${GLEW_LIB_PATH})
 
 # Generate the executable
 add_executable(${TARGET_NAME} ${Shaders} ${SOURCE_FILES} ${RESOURCES})
-target_link_libraries(${TARGET_NAME} glfw)
+target_link_libraries(${TARGET_NAME} glfw )
 
 if(WIN32)
-	list(APPEND LIBRARIES
-		${CMAKE_SOURCE_DIR}/includes/glew/lib/Release/Win32
-	)
-
-    target_link_libraries(${TARGET_NAME} opengl32 glew32 glu32 glm)
+    target_link_libraries(${TARGET_NAME} glew opengl32 glu32 glm)
 elseif(UNIX AND NOT APPLE)
 	list(APPEND LIBRARIES
 		${CMAKE_SOURCE_DIR}/includes/glew/lib/Release/x64
@@ -138,10 +144,10 @@ foreach(OUTPUTCONFIG DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
     string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG_UPPER)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER} "${CMAKE_SOURCE_DIR}/build/${OUTPUTCONFIG}")
 
-add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different 
-    ${GLEW_DLL_PATH} 
-    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER}}/glew32.dll
-)
+	#add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+	#    COMMAND ${CMAKE_COMMAND} -E copy_if_different 
+	#    ${GLEW_DLL_PATH} 
+	#    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER}}/glew32.dll
+	#)
 endforeach()
 
