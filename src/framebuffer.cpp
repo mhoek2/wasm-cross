@@ -21,7 +21,7 @@ void bind_fbo(framebuffer_t* fbo)
 	glBindFramebuffer(GL_FRAMEBUFFER, current_fbo->fbo);
 
 	//int display_w, display_h;
-	//glfwMakeContextCurrent(g_window);
+	glfwMakeContextCurrent(g_window);
 	//glfwGetFramebufferSize(g_window, &display_w, &display_h);
 
 	glViewport(0, 0, (int)screen_size.x, (int)screen_size.y);
@@ -145,14 +145,12 @@ int init_framebuffer(void)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
+	glViewport(0, 0, (int)screen_size.x, (int)screen_size.y);
+	std::cout << "viewport: " << screen_size.x << "x" << screen_size.y;
 
-	//float fov = 60.0f * 3.14159f / 180.0f; // convert to radians
-	//float aspect = screen_size.x / screen_size.y;
-	//float near_plane = 0.1f;
-	//float far_plane = 10.0f;
-	//
-	//mat4_t projection_mat = perspective(fov, aspect, near_plane, far_plane);
-	glm::mat4 projection_mat = glm::perspective(glm::radians(60.0f), (float)screen_size.x / screen_size.y, 0.1f, 10.0f);
+	renderer.aspect_ratio = screen_size.x / screen_size.y;
+	renderer.projection = glm::perspective(glm::radians(45.0f), renderer.aspect_ratio, 0.1f, 1000.0f);
+	renderer.view = glm::mat4(1.0f);  // identity as placeholder
 
 	return 0;
 }

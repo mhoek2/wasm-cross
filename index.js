@@ -31,7 +31,7 @@ if (ENVIRONMENT_IS_NODE) {
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-// include: C:\Users\REA-005\AppData\Local\Temp\tmp_a1nb982.js
+// include: C:\Users\REA-005\AppData\Local\Temp\tmpy3o4rb4w.js
 
   Module['expectedDataFileDownloads'] ??= 0;
   Module['expectedDataFileDownloads']++;
@@ -209,25 +209,25 @@ Module['FS_createPath']("/src", "glsl", true, true);
     }
 
     }
-    loadPackage({"files": [{"filename": "/src/glsl/color.frag", "start": 0, "end": 210}, {"filename": "/src/glsl/color.vert", "start": 210, "end": 498}, {"filename": "/src/glsl/gamma.frag", "start": 498, "end": 747}, {"filename": "/src/glsl/gamma.vert", "start": 747, "end": 968}], "remote_package_size": 968});
+    loadPackage({"files": [{"filename": "/src/glsl/color.frag", "start": 0, "end": 249}, {"filename": "/src/glsl/color.vert", "start": 249, "end": 570}, {"filename": "/src/glsl/gamma.frag", "start": 570, "end": 828}, {"filename": "/src/glsl/gamma.vert", "start": 828, "end": 1049}], "remote_package_size": 1049});
 
   })();
 
-// end include: C:\Users\REA-005\AppData\Local\Temp\tmp_a1nb982.js
-// include: C:\Users\REA-005\AppData\Local\Temp\tmpamlqzzot.js
+// end include: C:\Users\REA-005\AppData\Local\Temp\tmpy3o4rb4w.js
+// include: C:\Users\REA-005\AppData\Local\Temp\tmp862lzul_.js
 
     // All the pre-js content up to here must remain later on, we need to run
     // it.
     if (Module['$ww'] || (typeof ENVIRONMENT_IS_PTHREAD != 'undefined' && ENVIRONMENT_IS_PTHREAD)) Module['preRun'] = [];
     var necessaryPreJSTasks = Module['preRun'].slice();
-  // end include: C:\Users\REA-005\AppData\Local\Temp\tmpamlqzzot.js
-// include: C:\Users\REA-005\AppData\Local\Temp\tmp93ua8rix.js
+  // end include: C:\Users\REA-005\AppData\Local\Temp\tmp862lzul_.js
+// include: C:\Users\REA-005\AppData\Local\Temp\tmp8q7a29lk.js
 
     if (!Module['preRun']) throw 'Module.preRun should exist because file support used it; did a pre-js delete it?';
     necessaryPreJSTasks.forEach((task) => {
       if (Module['preRun'].indexOf(task) < 0) throw 'All preRun tasks that exist before user pre-js code should remain after; did you replace Module or modify Module.preRun?';
     });
-  // end include: C:\Users\REA-005\AppData\Local\Temp\tmp93ua8rix.js
+  // end include: C:\Users\REA-005\AppData\Local\Temp\tmp8q7a29lk.js
 
 
 var arguments_ = [];
@@ -5211,6 +5211,12 @@ async function createWasm() {
 
   var _glDisable = (x0) => GLctx.disable(x0);
 
+  var _glDisableVertexAttribArray = (index) => {
+      var cb = GL.currentContext.clientBuffers[index];
+      cb.enabled = false;
+      GLctx.disableVertexAttribArray(index);
+    };
+
   var _glDrawArrays = (mode, first, count) => {
       // bind any client-side buffers
       GL.preDrawHandleClientVertexAttribBindings(first + count);
@@ -5263,6 +5269,16 @@ async function createWasm() {
   var _glGenVertexArrays = (n, arrays) => {
       GL.genObject(n, arrays, 'createVertexArray', GL.vaos
         );
+    };
+
+  
+  var _glGetAttribLocation = (program, name) =>
+      GLctx.getAttribLocation(GL.programs[program], UTF8ToString(name));
+
+  var _glGetError = () => {
+      var error = GLctx.getError() || GL.lastError;
+      GL.lastError = 0/*GL_NO_ERROR*/;
+      return error;
     };
 
   var _glGetProgramiv = (program, pname, p) => {
@@ -5577,6 +5593,54 @@ async function createWasm() {
   
   var _glUniform1i = (location, v0) => {
       GLctx.uniform1i(webglGetUniformLocation(location), v0);
+    };
+
+  
+  var _glUniform4f = (location, v0, v1, v2, v3) => {
+      GLctx.uniform4f(webglGetUniformLocation(location), v0, v1, v2, v3);
+    };
+
+  
+  var miniTempWebGLFloatBuffers = [];
+  
+  var _glUniformMatrix4fv = (location, count, transpose, value) => {
+  
+      if (GL.currentContext.version >= 2) {
+        count && GLctx.uniformMatrix4fv(webglGetUniformLocation(location), !!transpose, HEAPF32, ((value)>>2), count*16);
+        return;
+      }
+  
+      if (count <= 18) {
+        // avoid allocation when uploading few enough uniforms
+        var view = miniTempWebGLFloatBuffers[16*count];
+        // hoist the heap out of the loop for size and for pthreads+growth.
+        var heap = HEAPF32;
+        value = ((value)>>2);
+        count *= 16;
+        for (var i = 0; i < count; i += 16) {
+          var dst = value + i;
+          view[i] = heap[dst];
+          view[i + 1] = heap[dst + 1];
+          view[i + 2] = heap[dst + 2];
+          view[i + 3] = heap[dst + 3];
+          view[i + 4] = heap[dst + 4];
+          view[i + 5] = heap[dst + 5];
+          view[i + 6] = heap[dst + 6];
+          view[i + 7] = heap[dst + 7];
+          view[i + 8] = heap[dst + 8];
+          view[i + 9] = heap[dst + 9];
+          view[i + 10] = heap[dst + 10];
+          view[i + 11] = heap[dst + 11];
+          view[i + 12] = heap[dst + 12];
+          view[i + 13] = heap[dst + 13];
+          view[i + 14] = heap[dst + 14];
+          view[i + 15] = heap[dst + 15];
+        }
+      } else
+      {
+        var view = HEAPF32.subarray((((value)>>2)), ((value+count*64)>>2));
+      }
+      GLctx.uniformMatrix4fv(webglGetUniformLocation(location), !!transpose, view);
     };
 
   var _glUseProgram = (program) => {
@@ -7265,6 +7329,8 @@ async function createWasm() {
   };
   var _glfwCreateWindow = (width, height, title, monitor, share) => GLFW.createWindow(width, height, title, monitor, share);
 
+  var _glfwGetKey = (winid, key) => GLFW.getKey(winid, key);
+
   var _glfwInit = () => {
       if (GLFW.windows) return 1; // GL_TRUE
   
@@ -7320,6 +7386,10 @@ async function createWasm() {
   var _glfwMakeContextCurrent = (winid) => 0;
 
   var _glfwPollEvents = () => 0;
+
+  var _glfwSetCursorPos = (winid, x, y) => GLFW.setCursorPos(winid, x, y);
+
+  var _glfwSetCursorPosCallback = (winid, cbfun) => GLFW.setCursorPosCallback(winid, cbfun);
 
   var _glfwSwapBuffers = (winid) => GLFW.swapBuffers(winid);
 
@@ -7396,6 +7466,11 @@ async function createWasm() {
       // start. This helps it optimize VBO double-buffering and reduce GPU stalls.
       registerPreMainLoop(() => GL.newRenderingFrameStarted());
     ;
+var miniTempWebGLFloatBuffersStorage = new Float32Array(288);
+  // Create GL_POOL_TEMP_BUFFERS_SIZE+1 temporary buffers, for uploads of size 0 through GL_POOL_TEMP_BUFFERS_SIZE inclusive
+  for (/**@suppress{duplicate}*/var i = 0; i <= 288; ++i) {
+    miniTempWebGLFloatBuffers[i] = miniTempWebGLFloatBuffersStorage.subarray(0, i);
+  };
 
       // exports
       Module['requestFullscreen'] = Browser.requestFullscreen;
@@ -7826,6 +7901,8 @@ var wasmImports = {
   /** @export */
   glDisable: _glDisable,
   /** @export */
+  glDisableVertexAttribArray: _glDisableVertexAttribArray,
+  /** @export */
   glDrawArrays: _glDrawArrays,
   /** @export */
   glEnable: _glEnable,
@@ -7848,6 +7925,10 @@ var wasmImports = {
   /** @export */
   glGenVertexArrays: _glGenVertexArrays,
   /** @export */
+  glGetAttribLocation: _glGetAttribLocation,
+  /** @export */
+  glGetError: _glGetError,
+  /** @export */
   glGetProgramiv: _glGetProgramiv,
   /** @export */
   glGetShaderInfoLog: _glGetShaderInfoLog,
@@ -7868,6 +7949,10 @@ var wasmImports = {
   /** @export */
   glUniform1i: _glUniform1i,
   /** @export */
+  glUniform4f: _glUniform4f,
+  /** @export */
+  glUniformMatrix4fv: _glUniformMatrix4fv,
+  /** @export */
   glUseProgram: _glUseProgram,
   /** @export */
   glVertexAttribPointer: _glVertexAttribPointer,
@@ -7876,11 +7961,17 @@ var wasmImports = {
   /** @export */
   glfwCreateWindow: _glfwCreateWindow,
   /** @export */
+  glfwGetKey: _glfwGetKey,
+  /** @export */
   glfwInit: _glfwInit,
   /** @export */
   glfwMakeContextCurrent: _glfwMakeContextCurrent,
   /** @export */
   glfwPollEvents: _glfwPollEvents,
+  /** @export */
+  glfwSetCursorPos: _glfwSetCursorPos,
+  /** @export */
+  glfwSetCursorPosCallback: _glfwSetCursorPosCallback,
   /** @export */
   glfwSwapBuffers: _glfwSwapBuffers,
   /** @export */

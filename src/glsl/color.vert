@@ -1,6 +1,6 @@
 #version 300 es
+precision mediump float;  // Define precision for WebGL
 
-uniform mat4 uMMatrix;
 uniform mat4 uVMatrix;
 uniform mat4 uPMatrix;
 

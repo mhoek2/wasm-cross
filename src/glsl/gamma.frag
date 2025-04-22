@@ -11,5 +11,5 @@ uniform sampler2D screenTexture;
 
 void main()
 { 
-    out_color = vec4(1.0, 1.0, 0.0, 1.0);
+    out_color = texture(screenTexture, TexCoords);
 }
