@@ -48,9 +48,7 @@ void render_fbo(framebuffer_t* fbo) {
 }
 
 void create_screen_vao() {
-	// Define quad vertices (positions + texture coordinates)
 	std::vector<float> quad = {
-		// positions        // texCoords
 		-1.0f,  1.0f,  0.0f, 1.0f,
 		-1.0f, -1.0f,  0.0f, 0.0f,
 		 1.0f, -1.0f,  1.0f, 0.0f,
@@ -157,7 +155,6 @@ int init_framebuffer(void)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glViewport(0, 0, (int)screen_size.x, (int)screen_size.y);
-	//std::cout << "viewport: " << screen_size.x << "x" << screen_size.y;
 
 	renderer.aspect_ratio = screen_size.x / screen_size.y;
 	renderer.projection = glm::perspective(glm::radians(45.0f), renderer.aspect_ratio, 0.1f, 1000.0f);

@@ -52,54 +52,47 @@ static GLuint gridVAO = 0;
 static GLuint gridVBO = 0;
 
 static void setup_grid() {
-	// Only set up the grid once
-	if (gridVAO == 0) {
-		glGenVertexArrays(1, &gridVAO);
-		glGenBuffers(1, &gridVBO);
+	if (gridVAO != 0)
+		return;
 
-		glBindVertexArray(gridVAO);
-		glBindBuffer(GL_ARRAY_BUFFER, gridVBO);
+	glGenVertexArrays(1, &gridVAO);
+	glGenBuffers(1, &gridVBO);
 
-		float size = 10.0f;
-		float spacing = 1.0f;
+	glBindVertexArray(gridVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, gridVBO);
 
-		std::vector<GLfloat> vertices;
+	float size = 10.0f;
+	float spacing = 1.0f;
 
-		// Draw grid lines on the XZ plane
-		for (float i = -size; i <= size; i += spacing) {
-			// XZ axis lines (parallel to Z axis)
-			vertices.push_back(i);   // X coordinate
-			vertices.push_back(0.0f); // Y coordinate
-			vertices.push_back(-size); // Z coordinate
+	std::vector<GLfloat> vertices;
 
-			vertices.push_back(i);   // X coordinate
-			vertices.push_back(0.0f); // Y coordinate
-			vertices.push_back(size); // Z coordinate
+	// Draw grid lines on the XZ plane
+	for (float i = -size; i <= size; i += spacing) {
+		vertices.push_back(i);
+		vertices.push_back(0.0f); 
+		vertices.push_back(-size);
 
-			// XY axis lines (parallel to X axis)
-			vertices.push_back(-size); // X coordinate
-			vertices.push_back(0.0f);  // Y coordinate
-			vertices.push_back(i);     // Z coordinate
+		vertices.push_back(i);
+		vertices.push_back(0.0f); 
+		vertices.push_back(size); 
 
-			vertices.push_back(size);  // X coordinate
-			vertices.push_back(0.0f);  // Y coordinate
-			vertices.push_back(i);     // Z coordinate
-		}
+		vertices.push_back(-size); 
+		vertices.push_back(0.0f);  
+		vertices.push_back(i);     
 
-		// Upload the vertex data to the GPU
-		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
-
-		// Position attribute
-		GLint posAttrib = glGetAttribLocation( color_shader, "aVertex");
-		glEnableVertexAttribArray(posAttrib);
-		glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
-
-		//glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
-		//glEnableVertexAttribArray(0);
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		glBindVertexArray(0);
+		vertices.push_back(size);  
+		vertices.push_back(0.0f);  
+		vertices.push_back(i);     
 	}
+
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
+
+	GLint posAttrib = glGetAttribLocation( color_shader, "aVertex");
+	glEnableVertexAttribArray(posAttrib);
+	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
 }
 
 static void draw_grid(void)
@@ -127,23 +120,18 @@ static void draw_grid(void)
 
 	loc = glGetUniformLocation(color_shader, "uColor");
 	if (loc == -1) {
-		std::cerr << "Warning: uVMatrix uniform not found or optimized out." << std::endl;
+		std::cerr << "Warning: uColor uniform not found or optimized out." << std::endl;
 	}
 	*/
 
-	// Set color
 	glUniform4f(glGetUniformLocation(color_shader, "uColor"), 1.0f, 1.0f, 1.0f, 1.0f);
 
-	// Set up the grid (VBO, VAO initialization only needs to be done once)
 	setup_grid();
 
-	// Draw the grid
 	glBindVertexArray(gridVAO);
 	glDrawArrays(GL_LINES, 0, 2 * (20 * 2)); // 20 lines, each consisting of 2 vertices (start and end)
 	glBindVertexArray(0);
 }
-
-
 
 void draw(void)
 {

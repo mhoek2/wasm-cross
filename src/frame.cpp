@@ -12,9 +12,6 @@ void begin_frame(void)
 	glfwPollEvents();
 	process_keyboard(g_window);
 
-	//self.frameTime = self.clock.tick(60)
-	//self.deltaTime = self.frameTime / self.DELTA_SHIFT
-
 	bind_fbo(&fbo);
 
 	renderer.view = get_view_matrix();

@@ -45,17 +45,14 @@ void update_camera_vectors() {
 }
 
 static void process_mouse_movement(double xoffset, double yoffset) {
-    // Apply sensitivity
     bool constrain_pitch = true;
 
     xoffset *= camera.mouse_sensitivity;
     yoffset *= camera.mouse_sensitivity;
 
-    // Update yaw and pitch
     camera.jaw += xoffset;
     camera.pitch += yoffset;
 
-    // Constrain pitch
     if (constrain_pitch) {
         if (camera.pitch > 45.0f) camera.pitch = 45.0f;
         if (camera.pitch < -45.0f) camera.pitch = -45.0f;
@@ -81,8 +78,6 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
         camera.mouse_moving = true;
         process_mouse_movement(xoffset, yoffset);
     }
-
-   // std::cout << "offsetx: " << xoffset << " offsety: " << yoffset << "\n";
 }
 
 void process_keyboard( GLFWwindow* window ) {
@@ -95,7 +90,6 @@ void process_keyboard( GLFWwindow* window ) {
     else
         velocity = camera.move_velocity;  // Normal movement speed
 
-    // Handle keyboard input for movement
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         camera.camera_pos += camera.camera_front * velocity;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)

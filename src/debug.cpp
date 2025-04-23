@@ -32,8 +32,7 @@ void draw_triangle(void)
 
 void setup_cube(void)
 {
-    GLfloat cubeVertices[] = {
-        // Positions          
+    GLfloat cubeVertices[] = {        
         -0.5f, -0.5f, -0.5f, // Back face
          0.5f, -0.5f, -0.5f,
          0.5f,  0.5f, -0.5f,
