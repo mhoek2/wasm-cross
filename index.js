@@ -31,7 +31,7 @@ if (ENVIRONMENT_IS_NODE) {
 
 // --pre-jses are emitted after the Module integration code, so that they can
 // refer to Module (if they choose; they can also define Module)
-// include: C:\Users\REA-005\AppData\Local\Temp\tmpizxus4_g.js
+// include: C:\Users\REA-005\AppData\Local\Temp\tmp6pwaxhfr.js
 
   Module['expectedDataFileDownloads'] ??= 0;
   Module['expectedDataFileDownloads']++;
@@ -209,25 +209,25 @@ Module['FS_createPath']("/src", "glsl", true, true);
     }
 
     }
-    loadPackage({"files": [{"filename": "/src/glsl/color.frag", "start": 0, "end": 249}, {"filename": "/src/glsl/color.vert", "start": 249, "end": 570}, {"filename": "/src/glsl/gamma.frag", "start": 570, "end": 828}, {"filename": "/src/glsl/gamma.vert", "start": 828, "end": 1049}], "remote_package_size": 1049});
+    loadPackage({"files": [{"filename": "/src/glsl/color.frag", "start": 0, "end": 195}, {"filename": "/src/glsl/color.vert", "start": 195, "end": 516}, {"filename": "/src/glsl/gamma.frag", "start": 516, "end": 774}, {"filename": "/src/glsl/gamma.vert", "start": 774, "end": 995}], "remote_package_size": 995});
 
   })();
 
-// end include: C:\Users\REA-005\AppData\Local\Temp\tmpizxus4_g.js
-// include: C:\Users\REA-005\AppData\Local\Temp\tmpzv9bnr_o.js
+// end include: C:\Users\REA-005\AppData\Local\Temp\tmp6pwaxhfr.js
+// include: C:\Users\REA-005\AppData\Local\Temp\tmpi03pugmm.js
 
     // All the pre-js content up to here must remain later on, we need to run
     // it.
     if (Module['$ww'] || (typeof ENVIRONMENT_IS_PTHREAD != 'undefined' && ENVIRONMENT_IS_PTHREAD)) Module['preRun'] = [];
     var necessaryPreJSTasks = Module['preRun'].slice();
-  // end include: C:\Users\REA-005\AppData\Local\Temp\tmpzv9bnr_o.js
-// include: C:\Users\REA-005\AppData\Local\Temp\tmpqkkzy937.js
+  // end include: C:\Users\REA-005\AppData\Local\Temp\tmpi03pugmm.js
+// include: C:\Users\REA-005\AppData\Local\Temp\tmpyt9b9t8o.js
 
     if (!Module['preRun']) throw 'Module.preRun should exist because file support used it; did a pre-js delete it?';
     necessaryPreJSTasks.forEach((task) => {
       if (Module['preRun'].indexOf(task) < 0) throw 'All preRun tasks that exist before user pre-js code should remain after; did you replace Module or modify Module.preRun?';
     });
-  // end include: C:\Users\REA-005\AppData\Local\Temp\tmpqkkzy937.js
+  // end include: C:\Users\REA-005\AppData\Local\Temp\tmpyt9b9t8o.js
 
 
 var arguments_ = [];

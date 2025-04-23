@@ -143,38 +143,15 @@ static void draw_grid(void)
 	glBindVertexArray(0);
 }
 
-GLuint vao, triangleVBO;
-void setup_triangle(void)
-{
-	GLfloat vertices[] = {
-		0.0f,  0.5f, 0.0f,
-	   -0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f
-	};
 
-	glGenVertexArrays(1, &vao);
-	glBindVertexArray(vao);
-
-	glGenBuffers(1, &triangleVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
-	glEnableVertexAttribArray(0);
-}
 
 void draw(void)
 {
 	begin_frame();
 
 	draw_grid();
-
-	// Use program
-	glUseProgram(color_shader); // assume already created & linked
-
-	// Draw
-	glBindVertexArray(vao);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	draw_triangle();
+	draw_cube();
 
 	end_frame();
 
@@ -192,7 +169,7 @@ int main(int argc, char* argv[])
 	if (init_framebuffer() != 0) return 1;
 
 	setup_grid();
-	setup_triangle();
+	setup_cube();
 
 #ifdef __EMSCRIPTEN__
 	emscripten_set_main_loop(draw, 0, 1);

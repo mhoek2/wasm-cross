@@ -12,8 +12,12 @@ int init_camera(void)
     camera.pitch = 0.0f;
 
     camera.mouse_sensitivity = 0.25f;
-    camera.move_velocity = 0.0001f;
 
+#ifdef __EMSCRIPTEN__
+    camera.move_velocity = 0.01f;
+#else
+    camera.move_velocity = 0.0001f;
+#endif
     camera.ignore_next_mouse_event = false;
     camera.mouse_moving = false;
 
@@ -69,7 +73,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     }
 
     double xoffset = xpos - camera.last_x;
-    double yoffset = camera.last_y - ypos;  // Invert the y-axis because GLFW has the origin at the bottom-left
+    double yoffset = camera.last_y - ypos; 
     camera.last_x = xpos;
     camera.last_y = ypos;
 
@@ -85,8 +89,8 @@ void process_keyboard( GLFWwindow* window ) {
     float velocity;
 
     // Speed up when control key is pressed
-    if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS ||
-        glfwGetKey(window, GLFW_KEY_RIGHT_CONTROL) == GLFW_PRESS)
+    if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS ||
+        glfwGetKey(window, GLFW_KEY_RIGHT_SHIFT) == GLFW_PRESS)
         velocity = camera.move_velocity * 30.0f;  // Increase movement speed
     else
         velocity = camera.move_velocity;  // Normal movement speed
@@ -100,5 +104,4 @@ void process_keyboard( GLFWwindow* window ) {
         camera.camera_pos -= camera.camera_right * velocity;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         camera.camera_pos += camera.camera_right * velocity;
-
 }
