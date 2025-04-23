@@ -143,32 +143,45 @@ static void draw_grid(void)
 	glBindVertexArray(0);
 }
 
+GLuint vao, triangleVBO;
+void setup_triangle(void)
+{
+	GLfloat vertices[] = {
+		0.0f,  0.5f, 0.0f,
+	   -0.5f, -0.5f, 0.0f,
+		0.5f, -0.5f, 0.0f
+	};
+
+	glGenVertexArrays(1, &vao);
+	glBindVertexArray(vao);
+
+	glGenBuffers(1, &triangleVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
+	glEnableVertexAttribArray(0);
+}
+
 void draw(void)
 {
 	begin_frame();
 
 	draw_grid();
 
-	GLuint triangleVBO = 0;
+	// Use program
+	glUseProgram(color_shader); // assume already created & linked
 
-	GLfloat vertices[] = {
-		0.0f, 0.5f, 0.0f,   // Vertex 1
-	   -0.5f, -0.5f, 0.0f,  // Vertex 2
-		0.5f, -0.5f, 0.0f   // Vertex 3
-	};
-
-	glGenBuffers(1, &triangleVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	// Draw call
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
-	glEnableVertexAttribArray(0);
+	// Draw
+	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
-	glDisableVertexAttribArray(0);
-
 
 	end_frame();
+
+#ifdef __EMSCRIPTEN__
+	///const GLubyte* version = glGetString(GL_VERSION);
+	//std::cout << "GL_VERSION: " << version << std::endl;
+#endif
 }
 
 int main(int argc, char* argv[])
@@ -179,6 +192,7 @@ int main(int argc, char* argv[])
 	if (init_framebuffer() != 0) return 1;
 
 	setup_grid();
+	setup_triangle();
 
 #ifdef __EMSCRIPTEN__
 	emscripten_set_main_loop(draw, 0, 1);

@@ -78,7 +78,7 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
         process_mouse_movement(xoffset, yoffset);
     }
 
-    std::cout << "offsetx: " << xoffset << " offsety: " << yoffset << "\n";
+   // std::cout << "offsetx: " << xoffset << " offsety: " << yoffset << "\n";
 }
 
 void process_keyboard( GLFWwindow* window ) {

@@ -83,8 +83,9 @@ void create_screen_vao() {
 	glBindVertexArray(0);
 }
 
-framebuffer_t create_fbo_with_depth(const vec2_t& size) {
+static framebuffer_t create_fbo_with_depth( void ) {
 	framebuffer_t result;
+	memset( &result, 0, sizeof(framebuffer_t) );
 
 	glGenFramebuffers(1, &result.fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, result.fbo);
@@ -93,18 +94,27 @@ framebuffer_t create_fbo_with_depth(const vec2_t& size) {
 	glGenTextures(1, &result.attachment);
 	glBindTexture(GL_TEXTURE_2D, result.attachment);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
-		static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y),
+		static_cast<GLsizei>(screen_size.x), static_cast<GLsizei>(screen_size.y),
 		0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, result.attachment, 0);
 
 	// Create depth renderbuffer
 	GLuint depthBuffer;
 	glGenRenderbuffers(1, &depthBuffer);
 	glBindRenderbuffer(GL_RENDERBUFFER, depthBuffer);
+#ifdef __EMSCRIPTEN__
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16,
+		static_cast<GLsizei>(screen_size.x), static_cast<GLsizei>(screen_size.y));
+#else
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT,
-		static_cast<GLsizei>(size.x), static_cast<GLsizei>(size.y));
+		static_cast<GLsizei>(screen_size.x), static_cast<GLsizei>(screen_size.y));
+#endif
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, depthBuffer);
 
 	// Check framebuffer status
@@ -138,7 +148,8 @@ framebuffer_t create_fbo_with_depth(const vec2_t& size) {
 
 int init_framebuffer(void)
 {
-	fbo = create_fbo_with_depth(screen_size);
+	fbo = create_fbo_with_depth();
+
 	create_screen_vao();
 
 	glEnable(GL_DEPTH_TEST);
@@ -146,7 +157,7 @@ int init_framebuffer(void)
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	glViewport(0, 0, (int)screen_size.x, (int)screen_size.y);
-	std::cout << "viewport: " << screen_size.x << "x" << screen_size.y;
+	//std::cout << "viewport: " << screen_size.x << "x" << screen_size.y;
 
 	renderer.aspect_ratio = screen_size.x / screen_size.y;
 	renderer.projection = glm::perspective(glm::radians(45.0f), renderer.aspect_ratio, 0.1f, 1000.0f);

@@ -108,7 +108,6 @@ void	bind_fbo(framebuffer_t* fbo);
 void	render_fbo(framebuffer_t* fbo);
 void	create_screen_vao();
 int		init_framebuffer(void);
-framebuffer_t create_fbo_with_depth(const vec2_t& size);
 
 
 #endif // LOCAL_H
