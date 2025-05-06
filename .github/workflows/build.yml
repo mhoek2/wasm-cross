@@ -3,10 +3,10 @@ name: Build and Deploy Docs
 on:
   push:
     branches:
-      - cicd
+      - main
   pull_request:
     branches:
-      - cicd
+      - main
 
 jobs:
   compile-emcc:
