@@ -5,6 +5,15 @@
 #include <iostream>
 #include <regex>
 
+#ifdef __EMSCRIPTEN__
+#define SHADER_PATH "src/glsl/"
+#else
+#define SHADER_PATH 
+#endif
+
+#define LOAD_SHADER( _shader, _name ) \
+    app.shaders._shader = load_shaders( SHADER_PATH #_name ".vert", SHADER_PATH  #_name ".frag" );
+
 void use_shader(GLuint shader) {
 	glUseProgram(shader);
 }
@@ -76,35 +85,12 @@ static GLuint load_shaders(const char* vshader, const char* fshader) {
 
 int init_shaders(void)
 {
-#ifdef __EMSCRIPTEN__
-	app.shaders.gamma_shader = load_shaders(
-		"src/glsl/gamma.vert",
-		"src/glsl/gamma.frag");
-	app.shaders.color_shader = load_shaders(
-		"src/glsl/color.vert",
-		"src/glsl/color.frag");
-	app.shaders.earth = load_shaders(
-		"src/glsl/earth.vert",
-		"src/glsl/earth.frag");
-#else
-	app.shaders.gamma_shader = load_shaders(
-		"gamma.vert",
-		"gamma.frag");
-	app.shaders.color_shader = load_shaders(
-		"color.vert",
-		"color.frag");
-	app.shaders.earth_shader = load_shaders(
-		"earth.vert",
-		"earth.frag");
-	app.shaders.shadow_depth = load_shaders(
-		"shadow_depth.vert",
-		"shadow_depth.frag");
-	app.shaders.shadow_debug = load_shaders(
-		"shadow_debug.vert",
-		"shadow_debug.frag");
-	app.shaders.atmosphere_shader = load_shaders(
-		"atmosphere.vert",
-		"atmosphere.frag");
-#endif
+    LOAD_SHADER( gamma_shader, gamma )
+    LOAD_SHADER( color_shader, color )
+    LOAD_SHADER( earth_shader, earth )
+    LOAD_SHADER( shadow_depth, shadow_depth )
+    LOAD_SHADER( shadow_debug, shadow_debug )
+    LOAD_SHADER( atmosphere_shader, atmosphere )
+
 	return 0;
 }

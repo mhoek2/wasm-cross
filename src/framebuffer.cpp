@@ -70,7 +70,9 @@ static framebuffer_t create_shadow_fbo( void )
 
 	glBindFramebuffer(GL_FRAMEBUFFER, result.fbo); // ?
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, result.attachment, 0);
+#ifndef __EMSCRIPTEN__
 	glDrawBuffer(GL_NONE); // no color
+#endif
 	glReadBuffer(GL_NONE);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);

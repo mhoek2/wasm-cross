@@ -30,6 +30,15 @@ glm::mat4 atmosphere_model;
 const float height_scale = 0.1f;
 const float normal_scale = 1.91f;
 
+#ifdef __EMSCRIPTEN__
+#define ASSETS_PATH "assets/"
+#else
+#define ASSETS_PATH
+#endif
+
+#define LOAD_TEXTURE( _name ) \
+    load_texture( ASSETS_PATH _name);
+
 GLuint load_texture(const char* path, bool flip_vertically = true)
 {
     if (flip_vertically) stbi_set_flip_vertically_on_load(true);
@@ -43,7 +52,11 @@ GLuint load_texture(const char* path, bool flip_vertically = true)
     }
 
     GLenum format = GL_RGB;
+#ifdef __EMSCRIPTEN__
+    if (channels == 1) format = GL_LUMINANCE;
+#else
     if (channels == 1) format = GL_RED;
+#endif
     else if (channels == 3) format = GL_RGB;
     else if (channels == 4) format = GL_RGBA;
 
@@ -57,7 +70,7 @@ GLuint load_texture(const char* path, bool flip_vertically = true)
     // Texture parameters
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);	
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     stbi_image_free(data);
@@ -171,7 +184,7 @@ static void setup_atmosphere( void )
     free(atmosphere_mesh.normals);
     free(atmosphere_mesh.indices);
 
-    app.atmosphere.noise_tex = load_texture("noise.png");
+    app.atmosphere.noise_tex = LOAD_TEXTURE("noise.png");
 
     glBindVertexArray(0);
 }
@@ -213,16 +226,16 @@ void setup_earth( void )
     free(earth_mesh.normals);
     free(earth_mesh.indices);
 
-    app.earth.colormap_tex = load_texture("earth_daymap.jpg");
-    //app.earth.nightmap_tex = load_texture("earth_nightmap.jpg");
-    app.earth.nightmap_tex = load_texture("earth_nightmap_l.jpg");
-    //app.earth.heightmap_tex = load_texture("earth_heightmap.png");
-    app.earth.heightmap_tex = load_texture("earth_bump.jpg");
-    app.earth.normalmap_tex = load_texture("earth_normal.png");
-    app.earth.aomap_tex = load_texture("earth_ao.png");
-    app.earth.metallicmap_tex = load_texture("earth_metallic.png");
-    app.earth.roughnessmap_tex = load_texture("earth_roughness.png");
-    app.earth.specularmap_tex = load_texture("earth_specular.jpg");
+    app.earth.colormap_tex = LOAD_TEXTURE("earth_daymap.jpg");
+    //app.earth.nightmap_tex = LOAD_TEXTURE(ASSETS_PATH "earth_nightmap.jpg");
+    app.earth.nightmap_tex = LOAD_TEXTURE("earth_nightmap_l.jpg");
+    //app.earth.heightmap_tex = LOAD_TEXTURE(ASSETS_PATH "earth_heightmap.png");
+    app.earth.heightmap_tex = LOAD_TEXTURE("earth_bump.jpg");
+    app.earth.normalmap_tex = LOAD_TEXTURE("earth_normal.png");
+    app.earth.aomap_tex = LOAD_TEXTURE("earth_ao.png");
+    app.earth.metallicmap_tex = LOAD_TEXTURE("earth_metallic.png");
+    app.earth.roughnessmap_tex = LOAD_TEXTURE("earth_roughness.png");
+    app.earth.specularmap_tex = LOAD_TEXTURE("earth_specular.jpg");
 
     glBindVertexArray(0);
 

@@ -18,7 +18,9 @@
 // emcc src/main.cpp src/shader.cpp src/frame.cpp src/framebuffer.cpp -o index.html -s FULL_ES3=1 -s USE_GLFW=3 --preload-file src/glsl -I./external-wasm
 // emcc src/main.cpp src/shader.cpp src/frame.cpp src/camera.cpp src/framebuffer.cpp -o index.html -s FULL_ES3=1 -s USE_GLFW=3 --preload-file src/glsl -I./external-wasm
 // emcc src/main.cpp src/shader.cpp src/frame.cpp src/camera.cpp src/framebuffer.cpp src/debug.cpp -o build-wasm/index.html -s FULL_ES3=1 -s USE_GLFW=3 --preload-file src/glsl -I./external-wasm -v
-//
+// emcc src/main.cpp src/shader.cpp src/frame.cpp src/camera.cpp src/framebuffer.cpp src/debug.cpp src/earth.cpp -o build-wasm/index.html -s FULL_ES3=1 -s USE_GLFW=3 --preload-file src/glsl -I./external-wasm -v
+// emcc src/main.cpp src/shader.cpp src/frame.cpp src/camera.cpp src/framebuffer.cpp src/debug.cpp src/earth.cpp -o build-wasm/index.html -s FULL_ES3=1 -s USE_GLFW=3 --preload-file src/glsl --preload-file assets -I./external-wasm -s ALLOW_MEMORY_GROWTH
+
 #include <emscripten.h>
 #include <GLES3/gl3.h>
 #else
