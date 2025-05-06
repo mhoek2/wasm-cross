@@ -122,6 +122,7 @@ var REMOTE_PACKAGE_SIZE = metadata['remote_package_size'];
       function assert(check, msg) {
         if (!check) throw msg + new Error().stack;
       }
+Module['FS_createPath']("/", "assets", true, true);
 Module['FS_createPath']("/", "src", true, true);
 Module['FS_createPath']("/src", "glsl", true, true);
 
@@ -191,7 +192,7 @@ Module['FS_createPath']("/src", "glsl", true, true);
     }
 
     }
-    loadPackage({"files": [{"filename": "/src/glsl/color.frag", "start": 0, "end": 183}, {"filename": "/src/glsl/color.vert", "start": 183, "end": 488}, {"filename": "/src/glsl/gamma.frag", "start": 488, "end": 732}, {"filename": "/src/glsl/gamma.vert", "start": 732, "end": 943}], "remote_package_size": 943});
+    loadPackage({"files": [{"filename": "/assets/earth_ao.png", "start": 0, "end": 3851105}, {"filename": "/assets/earth_bump.jpg", "start": 3851105, "end": 4026488}, {"filename": "/assets/earth_daymap.jpg", "start": 4026488, "end": 6593258}, {"filename": "/assets/earth_heightmap.png", "start": 6593258, "end": 15160313}, {"filename": "/assets/earth_metallic.png", "start": 15160313, "end": 15238350}, {"filename": "/assets/earth_nightmap.jpg", "start": 15238350, "end": 15361094}, {"filename": "/assets/earth_nightmap_l.jpg", "start": 15361094, "end": 18425663}, {"filename": "/assets/earth_normal.png", "start": 18425663, "end": 22466963}, {"filename": "/assets/earth_roughness.png", "start": 22466963, "end": 22545001}, {"filename": "/assets/earth_specular.jpg", "start": 22545001, "end": 22639936}, {"filename": "/assets/noise.png", "start": 22639936, "end": 22849528}, {"filename": "/src/glsl/atmosphere.frag", "start": 22849528, "end": 22849874}, {"filename": "/src/glsl/atmosphere.vert", "start": 22849874, "end": 22850785}, {"filename": "/src/glsl/color.frag", "start": 22850785, "end": 22850968}, {"filename": "/src/glsl/color.vert", "start": 22850968, "end": 22851273}, {"filename": "/src/glsl/earth.frag", "start": 22851273, "end": 22857642}, {"filename": "/src/glsl/earth.vert", "start": 22857642, "end": 22858735}, {"filename": "/src/glsl/gamma.frag", "start": 22858735, "end": 22858979}, {"filename": "/src/glsl/gamma.vert", "start": 22858979, "end": 22859190}, {"filename": "/src/glsl/shadow_debug.frag", "start": 22859190, "end": 22859420}, {"filename": "/src/glsl/shadow_debug.vert", "start": 22859420, "end": 22859621}, {"filename": "/src/glsl/shadow_depth.frag", "start": 22859621, "end": 22859730}, {"filename": "/src/glsl/shadow_depth.vert", "start": 22859730, "end": 22860242}], "remote_package_size": 22860242});
 
   })();
 
@@ -2098,6 +2099,13 @@ function dbg(text) {
   write(stream, buffer, offset, length, position, canOwn) {
           // The data buffer should be a typed array view
           assert(!(buffer instanceof ArrayBuffer));
+          // If the buffer is located in main memory (HEAP), and if
+          // memory can grow, we can't hold on to references of the
+          // memory buffer, as they may get invalidated. That means we
+          // need to do copy its contents.
+          if (buffer.buffer === HEAP8.buffer) {
+            canOwn = false;
+          }
   
           if (!length) return 0;
           var node = stream.node;
@@ -4256,16 +4264,79 @@ function dbg(text) {
   var _emscripten_memcpy_big = (dest, src, num) => HEAPU8.copyWithin(dest, src, src + num);
 
   var getHeapMax = () =>
-      HEAPU8.length;
+      // Stay one Wasm page short of 4GB: while e.g. Chrome is able to allocate
+      // full 4GB Wasm memories, the size will wrap back to 0 bytes in Wasm side
+      // for any code that deals with heap sizes, which would require special
+      // casing all heap size related code to treat 0 specially.
+      2147483648;
   
-  var abortOnCannotGrowMemory = (requestedSize) => {
-      abort(`Cannot enlarge memory arrays to size ${requestedSize} bytes (OOM). Either (1) compile with -sINITIAL_MEMORY=X with X higher than the current value ${HEAP8.length}, (2) compile with -sALLOW_MEMORY_GROWTH which allows increasing the size at runtime, or (3) if you want malloc to return NULL (0) instead of this abort, compile with -sABORTING_MALLOC=0`);
+  var growMemory = (size) => {
+      var b = wasmMemory.buffer;
+      var pages = (size - b.byteLength + 65535) / 65536;
+      try {
+        // round size grow request up to wasm page size (fixed 64KB per spec)
+        wasmMemory.grow(pages); // .grow() takes a delta compared to the previous size
+        updateMemoryViews();
+        return 1 /*success*/;
+      } catch(e) {
+        err(`growMemory: Attempted to grow heap from ${b.byteLength} bytes to ${size} bytes, but got error: ${e}`);
+      }
+      // implicit 0 return to save code size (caller will cast "undefined" into 0
+      // anyhow)
     };
   var _emscripten_resize_heap = (requestedSize) => {
       var oldSize = HEAPU8.length;
       // With CAN_ADDRESS_2GB or MEMORY64, pointers are already unsigned.
       requestedSize >>>= 0;
-      abortOnCannotGrowMemory(requestedSize);
+      // With multithreaded builds, races can happen (another thread might increase the size
+      // in between), so return a failure, and let the caller retry.
+      assert(requestedSize > oldSize);
+  
+      // Memory resize rules:
+      // 1.  Always increase heap size to at least the requested size, rounded up
+      //     to next page multiple.
+      // 2a. If MEMORY_GROWTH_LINEAR_STEP == -1, excessively resize the heap
+      //     geometrically: increase the heap size according to
+      //     MEMORY_GROWTH_GEOMETRIC_STEP factor (default +20%), At most
+      //     overreserve by MEMORY_GROWTH_GEOMETRIC_CAP bytes (default 96MB).
+      // 2b. If MEMORY_GROWTH_LINEAR_STEP != -1, excessively resize the heap
+      //     linearly: increase the heap size by at least
+      //     MEMORY_GROWTH_LINEAR_STEP bytes.
+      // 3.  Max size for the heap is capped at 2048MB-WASM_PAGE_SIZE, or by
+      //     MAXIMUM_MEMORY, or by ASAN limit, depending on which is smallest
+      // 4.  If we were unable to allocate as much memory, it may be due to
+      //     over-eager decision to excessively reserve due to (3) above.
+      //     Hence if an allocation fails, cut down on the amount of excess
+      //     growth, in an attempt to succeed to perform a smaller allocation.
+  
+      // A limit is set for how much we can grow. We should not exceed that
+      // (the wasm binary specifies it, so if we tried, we'd fail anyhow).
+      var maxHeapSize = getHeapMax();
+      if (requestedSize > maxHeapSize) {
+        err(`Cannot enlarge memory, requested ${requestedSize} bytes, but the limit is ${maxHeapSize} bytes!`);
+        return false;
+      }
+  
+      var alignUp = (x, multiple) => x + (multiple - x % multiple) % multiple;
+  
+      // Loop through potential heap size increases. If we attempt a too eager
+      // reservation that fails, cut down on the attempted size and reserve a
+      // smaller bump instead. (max 3 times, chosen somewhat arbitrarily)
+      for (var cutDown = 1; cutDown <= 4; cutDown *= 2) {
+        var overGrownHeapSize = oldSize * (1 + 0.2 / cutDown); // ensure geometric growth
+        // but limit overreserving (default to capping at +96MB overgrowth at most)
+        overGrownHeapSize = Math.min(overGrownHeapSize, requestedSize + 100663296 );
+  
+        var newSize = Math.min(maxHeapSize, alignUp(Math.max(requestedSize, overGrownHeapSize), 65536));
+  
+        var replacement = growMemory(newSize);
+        if (replacement) {
+  
+          return true;
+        }
+      }
+      err(`Failed to grow the heap from ${oldSize} bytes to ${newSize} bytes, not enough memory!`);
+      return false;
     };
 
   
@@ -5749,6 +5820,12 @@ function dbg(text) {
       GL.shaders[id] = null;
     };
 
+  function _glDepthFunc(x0) { GLctx.depthFunc(x0) }
+
+  var _glDepthMask = (flag) => {
+      GLctx.depthMask(!!flag);
+    };
+
   function _glDisable(x0) { GLctx.disable(x0) }
 
   var _glDrawArrays = (mode, first, count) => {
@@ -5758,6 +5835,31 @@ function dbg(text) {
       GLctx.drawArrays(mode, first, count);
   
       GL.postDrawHandleClientVertexAttribBindings();
+    };
+
+  var _glDrawElements = (mode, count, type, indices) => {
+      var buf;
+      if (!GLctx.currentElementArrayBufferBinding) {
+        var size = GL.calcBufLength(1, type, 0, count);
+        buf = GL.getTempIndexBuffer(size);
+        GLctx.bindBuffer(0x8893 /*GL_ELEMENT_ARRAY_BUFFER*/, buf);
+        GLctx.bufferSubData(0x8893 /*GL_ELEMENT_ARRAY_BUFFER*/,
+                                 0,
+                                 HEAPU8.subarray(indices, indices + size));
+        // the index is now 0
+        indices = 0;
+      }
+  
+      // bind any client-side buffers
+      GL.preDrawHandleClientVertexAttribBindings(count);
+  
+      GLctx.drawElements(mode, count, type, indices);
+  
+      GL.postDrawHandleClientVertexAttribBindings(count);
+  
+      if (!GLctx.currentElementArrayBufferBinding) {
+        GLctx.bindBuffer(0x8893 /*GL_ELEMENT_ARRAY_BUFFER*/, null);
+      }
     };
 
   function _glEnable(x0) { GLctx.enable(x0) }
@@ -5823,6 +5925,8 @@ function dbg(text) {
       __glGenObject(n, arrays, 'createVertexArray', GL.vaos
         );
     }
+
+  function _glGenerateMipmap(x0) { GLctx.generateMipmap(x0) }
 
   
   var _glGetAttribLocation = (program, name) => {
@@ -6021,6 +6125,10 @@ function dbg(text) {
   
     };
 
+  function _glPolygonOffset(x0, x1) { GLctx.polygonOffset(x0, x1) }
+
+  function _glReadBuffer(x0) { GLctx.readBuffer(x0) }
+
   function _glRenderbufferStorage(x0, x1, x2, x3) { GLctx.renderbufferStorage(x0, x1, x2, x3) }
 
   var _glShaderSource = (shader, count, string, length) => {
@@ -6141,13 +6249,18 @@ function dbg(text) {
       }
     };
   
+  var _glUniform1f = (location, v0) => {
+      GLctx.uniform1f(webglGetUniformLocation(location), v0);
+    };
+
+  
   var _glUniform1i = (location, v0) => {
       GLctx.uniform1i(webglGetUniformLocation(location), v0);
     };
 
   
-  var _glUniform4f = (location, v0, v1, v2, v3) => {
-      GLctx.uniform4f(webglGetUniformLocation(location), v0, v1, v2, v3);
+  var _glUniform3f = (location, v0, v1, v2) => {
+      GLctx.uniform3f(webglGetUniformLocation(location), v0, v1, v2);
     };
 
   
@@ -7118,6 +7231,8 @@ function dbg(text) {
 
   var _glfwGetKey = (winid, key) => GLFW.getKey(winid, key);
 
+  var _glfwGetTime = () => GLFW.getTime() - GLFW.initialTime;
+
   var _emscripten_get_device_pixel_ratio = () => {
       return (typeof devicePixelRatio == 'number' && devicePixelRatio) || 1.0;
     };
@@ -7741,8 +7856,11 @@ var wasmImports = {
   glCreateProgram: _glCreateProgram,
   glCreateShader: _glCreateShader,
   glDeleteShader: _glDeleteShader,
+  glDepthFunc: _glDepthFunc,
+  glDepthMask: _glDepthMask,
   glDisable: _glDisable,
   glDrawArrays: _glDrawArrays,
+  glDrawElements: _glDrawElements,
   glEnable: _glEnable,
   glEnableVertexAttribArray: _glEnableVertexAttribArray,
   glFlush: _glFlush,
@@ -7753,6 +7871,7 @@ var wasmImports = {
   glGenRenderbuffers: _glGenRenderbuffers,
   glGenTextures: _glGenTextures,
   glGenVertexArrays: _glGenVertexArrays,
+  glGenerateMipmap: _glGenerateMipmap,
   glGetAttribLocation: _glGetAttribLocation,
   glGetError: _glGetError,
   glGetProgramiv: _glGetProgramiv,
@@ -7760,19 +7879,23 @@ var wasmImports = {
   glGetShaderiv: _glGetShaderiv,
   glGetUniformLocation: _glGetUniformLocation,
   glLinkProgram: _glLinkProgram,
+  glPolygonOffset: _glPolygonOffset,
+  glReadBuffer: _glReadBuffer,
   glRenderbufferStorage: _glRenderbufferStorage,
   glShaderSource: _glShaderSource,
   glTexImage2D: _glTexImage2D,
   glTexParameterf: _glTexParameterf,
   glTexParameteri: _glTexParameteri,
+  glUniform1f: _glUniform1f,
   glUniform1i: _glUniform1i,
-  glUniform4f: _glUniform4f,
+  glUniform3f: _glUniform3f,
   glUniformMatrix4fv: _glUniformMatrix4fv,
   glUseProgram: _glUseProgram,
   glVertexAttribPointer: _glVertexAttribPointer,
   glViewport: _glViewport,
   glfwCreateWindow: _glfwCreateWindow,
   glfwGetKey: _glfwGetKey,
+  glfwGetTime: _glfwGetTime,
   glfwInit: _glfwInit,
   glfwMakeContextCurrent: _glfwMakeContextCurrent,
   glfwPollEvents: _glfwPollEvents,
@@ -7785,10 +7908,10 @@ var wasmImports = {
 var wasmExports = createWasm();
 var ___wasm_call_ctors = createExportWrapper('__wasm_call_ctors');
 var _main = Module['_main'] = createExportWrapper('__main_argc_argv');
+var _free = createExportWrapper('free');
+var _malloc = createExportWrapper('malloc');
 var ___errno_location = createExportWrapper('__errno_location');
 var _fflush = Module['_fflush'] = createExportWrapper('fflush');
-var _malloc = createExportWrapper('malloc');
-var _free = createExportWrapper('free');
 var _emscripten_stack_init = () => (_emscripten_stack_init = wasmExports['emscripten_stack_init'])();
 var _emscripten_stack_get_free = () => (_emscripten_stack_get_free = wasmExports['emscripten_stack_get_free'])();
 var _emscripten_stack_get_base = () => (_emscripten_stack_get_base = wasmExports['emscripten_stack_get_base'])();
@@ -7857,7 +7980,6 @@ var missingLibrarySymbols = [
   'readI53FromU64',
   'convertI32PairToI53',
   'convertU32PairToI53',
-  'growMemory',
   'ydayFromDate',
   'inetPton4',
   'inetNtop4',
@@ -8021,7 +8143,7 @@ var unexportedSymbols = [
   'zeroMemory',
   'exitJS',
   'getHeapMax',
-  'abortOnCannotGrowMemory',
+  'growMemory',
   'ENV',
   'MONTH_DAYS_REGULAR',
   'MONTH_DAYS_LEAP',
