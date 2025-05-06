@@ -77,19 +77,34 @@ static GLuint load_shaders(const char* vshader, const char* fshader) {
 int init_shaders(void)
 {
 #ifdef __EMSCRIPTEN__
-	gamma_shader = load_shaders(
+	app.shaders.gamma_shader = load_shaders(
 		"src/glsl/gamma.vert",
 		"src/glsl/gamma.frag");
-	color_shader = load_shaders(
+	app.shaders.color_shader = load_shaders(
 		"src/glsl/color.vert",
 		"src/glsl/color.frag");
+	app.shaders.earth = load_shaders(
+		"src/glsl/earth.vert",
+		"src/glsl/earth.frag");
 #else
-	gamma_shader = load_shaders(
+	app.shaders.gamma_shader = load_shaders(
 		"gamma.vert",
 		"gamma.frag");
-	color_shader = load_shaders(
+	app.shaders.color_shader = load_shaders(
 		"color.vert",
 		"color.frag");
+	app.shaders.earth_shader = load_shaders(
+		"earth.vert",
+		"earth.frag");
+	app.shaders.shadow_depth = load_shaders(
+		"shadow_depth.vert",
+		"shadow_depth.frag");
+	app.shaders.shadow_debug = load_shaders(
+		"shadow_debug.vert",
+		"shadow_debug.frag");
+	app.shaders.atmosphere_shader = load_shaders(
+		"atmosphere.vert",
+		"atmosphere.frag");
 #endif
 	return 0;
 }

@@ -7,8 +7,8 @@
 
 void unbind_fbo(void)
 {
-	if (current_fbo != nullptr)
-		current_fbo = nullptr;
+	if (app.framebuffers.current != nullptr)
+		app.framebuffers.current = nullptr;
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -16,38 +16,68 @@ void unbind_fbo(void)
 void bind_fbo(framebuffer_t* fbo)
 {
 	unbind_fbo();
-	current_fbo = fbo;
+	app.framebuffers.current = fbo;
 
-	glBindFramebuffer(GL_FRAMEBUFFER, current_fbo->fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, app.framebuffers.current->fbo);
 
 	//int display_w, display_h;
-	glfwMakeContextCurrent(g_window);
+	glfwMakeContextCurrent(app.g_window);
 	//glfwGetFramebufferSize(g_window, &display_w, &display_h);
 
 	glViewport(0, 0, (int)screen_size.x, (int)screen_size.y);
-	glClearColor(0.2f, 0.3f, 0.4f, 1.0f);
+	glClearColor(0.00f, 0.008f, 0.03f, 1.0f);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
 }
 
 void render_fbo(framebuffer_t* fbo) {
 
-	use_shader(gamma_shader);
+	use_shader(app.shaders.gamma_shader);
 
-	glBindVertexArray(screenVAO);
+	glBindVertexArray(app.screen.vao);
 	glDisable(GL_DEPTH_TEST);
 
 	glActiveTexture(GL_TEXTURE0);
 
 	glBindTexture(GL_TEXTURE_2D, fbo->attachment);
 
-	glUniform1i(glGetUniformLocation(gamma_shader, "screenTexture"), 0);
+	glUniform1i(glGetUniformLocation(app.shaders.gamma_shader, "screenTexture"), 0);
 	glDrawArrays(GL_TRIANGLES, 0, 6);
 
 	glBindVertexArray(0);
 }
 
-void create_screen_vao() {
+static framebuffer_t create_shadow_fbo( void )
+{
+	framebuffer_t result;
+	memset( &result, 0, sizeof(framebuffer_t) );
+
+	glGenFramebuffers(1, &result.fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, result.fbo);
+
+	glGenTextures(1, &result.attachment);
+	glBindTexture(GL_TEXTURE_2D, result.attachment);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+				 SHADOW_RES, SHADOW_RES, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+
+	float borderColor[] = {1.0, 1.0, 1.0, 1.0};
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, result.fbo); // ?
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, result.attachment, 0);
+	glDrawBuffer(GL_NONE); // no color
+	glReadBuffer(GL_NONE);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	return result;
+}
+
+void create_screen_vao( void ) {
 	std::vector<float> quad = {
 		-1.0f,  1.0f,  0.0f, 1.0f,
 		-1.0f, -1.0f,  0.0f, 0.0f,
@@ -58,14 +88,14 @@ void create_screen_vao() {
 	};
 
 	// Generate VAO and VBO
-	glGenVertexArrays(1, &screenVAO);
-	glGenBuffers(1, &screenVBO);
+	glGenVertexArrays(1, &app.screen.vao);
+	glGenBuffers(1, &app.screen.vbo);
 
 	// Bind VAO
-	glBindVertexArray(screenVAO);
+	glBindVertexArray(app.screen.vao);
 
 	// Bind VBO and load data
-	glBindBuffer(GL_ARRAY_BUFFER, screenVBO);
+	glBindBuffer(GL_ARRAY_BUFFER, app.screen.vbo);
 	glBufferData(GL_ARRAY_BUFFER, quad.size() * sizeof(float), quad.data(), GL_STATIC_DRAW);
 
 	// Set vertex attribute pointers for position
@@ -94,9 +124,9 @@ static framebuffer_t create_fbo_with_depth( void ) {
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA,
 		static_cast<GLsizei>(screen_size.x), static_cast<GLsizei>(screen_size.y),
 		0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
@@ -146,7 +176,8 @@ static framebuffer_t create_fbo_with_depth( void ) {
 
 int init_framebuffer(void)
 {
-	fbo = create_fbo_with_depth();
+	app.framebuffers.main = create_fbo_with_depth();
+	app.framebuffers.shadow = create_shadow_fbo();
 
 	create_screen_vao();
 
@@ -156,9 +187,11 @@ int init_framebuffer(void)
 
 	glViewport(0, 0, (int)screen_size.x, (int)screen_size.y);
 
-	renderer.aspect_ratio = screen_size.x / screen_size.y;
-	renderer.projection = glm::perspective(glm::radians(45.0f), renderer.aspect_ratio, 0.1f, 1000.0f);
-	renderer.view = glm::mat4(1.0f);  // identity as placeholder
+	app.renderer.aspect_ratio = screen_size.x / screen_size.y;
+	app.renderer.projection = glm::perspective(glm::radians(45.0f), app.renderer.aspect_ratio, 0.1f, 1000.0f);
+	app.renderer.view = glm::mat4(1.0f);  // identity as placeholder
+
+	app.renderer.identity = glm::mat4(1.0f);
 
 	return 0;
 }

@@ -80,11 +80,15 @@ if(WIN32)
     list(APPEND SOURCE_FILES ${HEADER_FILES}) # For Visual Studio filters
 endif()
 
-# Copy shaders to output directory
-foreach(SHADER_FILE ${SHADER_FILES})
-    get_filename_component(SHADER_NAME ${SHADER_FILE} NAME)
-    configure_file(${SHADER_FILE} ${CMAKE_CURRENT_BINARY_DIR}/${SHADER_NAME} COPYONLY)
-endforeach()
+# ------------------------------------------------------------------------------
+# SHADERS
+# ------------------------------------------------------------------------------
+
+#add_custom_target(copy_shaders ALL 
+#    COMMAND ${CMAKE_COMMAND} -E copy_directory
+#        "${CMAKE_SOURCE_DIR}/src/glsl"
+#        "$<TARGET_FILE_DIR:${TARGET_NAME}>"
+#)
 
 # ------------------------------------------------------------------------------
 # INCLUDE DIRECTORIES
@@ -117,6 +121,17 @@ elseif(UNIX AND NOT APPLE)
     target_link_libraries(${TARGET_NAME} GL)
 endif()
 
+
+# ------------------------------------------------------------------------------
+# SHADERS
+# ------------------------------------------------------------------------------
+
+add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/src/glsl"
+        "$<TARGET_FILE_DIR:${TARGET_NAME}>"
+)
+
 # ------------------------------------------------------------------------------
 # OUTPUT CONFIGURATION
 # ------------------------------------------------------------------------------
@@ -126,6 +141,11 @@ foreach(OUTPUTCONFIG IN ITEMS DEBUG RELEASE RELWITHDEBINFO MINSIZEREL)
     string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG_UPPER)
     set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG_UPPER} "${CMAKE_SOURCE_DIR}/build/${OUTPUTCONFIG}")
 endforeach()
+
+# For Visual Studio: Set debugger working directory per config (Debug/Release/etc.)
+set_target_properties(${TARGET_NAME} PROPERTIES
+    VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/build/$<CONFIG>"
+)
 
 # ------------------------------------------------------------------------------
 # INSTALLATION

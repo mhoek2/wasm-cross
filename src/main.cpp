@@ -6,17 +6,11 @@
 #include <vector>
 #include <iostream>
 
-GLFWwindow* g_window;
 
-GLuint screenVAO, screenVBO;
-GLuint color_shader;
-GLuint gamma_shader;
+application_t app;
 
-camera_t camera;
-renderer_t renderer;
-
-framebuffer_t fbo;
-framebuffer_t* current_fbo = nullptr;
+static GLuint gridVAO = 0;
+static GLuint gridVBO = 0;
 
 static int init_window( void ) {
 	if (!glfwInit())
@@ -25,17 +19,17 @@ static int init_window( void ) {
 		return 1;
 	}
 
-	g_window = glfwCreateWindow(screen_size.x, screen_size.y, "WASM Demo", NULL, NULL);
-	if (g_window == NULL)
+	app.g_window = glfwCreateWindow(screen_size.x, screen_size.y, "WASM Demo", NULL, NULL);
+	if (app.g_window == NULL)
 	{
 		fprintf(stderr, "Failed to open GLFW window.\n");
 		glfwTerminate();
 		return -1;
 	}
-	glfwMakeContextCurrent( g_window );
+	glfwMakeContextCurrent( app.g_window );
 
-	//glfwSetInputMode( g_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
-	glfwSetCursorPosCallback( g_window, mouse_callback );
+	//glfwSetInputMode( app.g_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
+	glfwSetCursorPosCallback( app.g_window, mouse_callback );
 
 #ifndef __EMSCRIPTEN__
 	GLenum err = glewInit();
@@ -47,9 +41,6 @@ static int init_window( void ) {
 
 	return 0;
 }
-
-static GLuint gridVAO = 0;
-static GLuint gridVBO = 0;
 
 static void setup_grid() {
 	if (gridVAO != 0)
@@ -87,7 +78,7 @@ static void setup_grid() {
 
 	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(GLfloat), vertices.data(), GL_STATIC_DRAW);
 
-	GLint posAttrib = glGetAttribLocation( color_shader, "aVertex");
+	GLint posAttrib = glGetAttribLocation( app.shaders.color_shader, "aVertex");
 	glEnableVertexAttribArray(posAttrib);
 	glVertexAttribPointer(posAttrib, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (void*)0);
 
@@ -99,32 +90,22 @@ static void draw_grid(void)
 {
 	uint32_t i;
 
-	use_shader(color_shader);
+	use_shader(app.shaders.color_shader);
 
 	// Bind the projection matrix
-	glUniformMatrix4fv(glGetUniformLocation(color_shader, "uPMatrix"), 1, GL_FALSE, glm::value_ptr(renderer.projection));
+	glUniformMatrix4fv(glGetUniformLocation(app.shaders.color_shader, "uPMatrix"), 1, GL_FALSE, glm::value_ptr(app.renderer.projection));
 
 	// Bind the view matrix
-	glUniformMatrix4fv(glGetUniformLocation(color_shader, "uVMatrix"), 1, GL_FALSE, glm::value_ptr(renderer.view));
-	
-	/*
-	GLint loc = glGetUniformLocation(color_shader, "uPMatrix");
+	glUniformMatrix4fv(glGetUniformLocation(app.shaders.color_shader, "uVMatrix"), 1, GL_FALSE, glm::value_ptr(app.renderer.view));
+
+#if 0
+	GLint loc = glGetUniformLocation(app.shaders.color_shader, "uPMatrix");
 	if (loc == -1) {
 		std::cerr << "Warning: uPMatrix uniform not found or optimized out." << std::endl;
 	}
+#endif
 
-	loc = glGetUniformLocation(color_shader, "uVMatrix");
-	if (loc == -1) {
-		std::cerr << "Warning: uVMatrix uniform not found or optimized out." << std::endl;
-	}
-
-	loc = glGetUniformLocation(color_shader, "uColor");
-	if (loc == -1) {
-		std::cerr << "Warning: uColor uniform not found or optimized out." << std::endl;
-	}
-	*/
-
-	glUniform4f(glGetUniformLocation(color_shader, "uColor"), 1.0f, 1.0f, 1.0f, 1.0f);
+	glUniform4f(glGetUniformLocation(app.shaders.color_shader, "uColor"), 1.0f, 1.0f, 1.0f, 1.0f);
 
 	setup_grid();
 
@@ -135,11 +116,19 @@ static void draw_grid(void)
 
 void draw(void)
 {
+	prepare_frame();
+	 
+	prepare_uniforms();
+
+	render_shadow_pass( app.shaders.shadow_depth );
 	begin_frame();
 
-	draw_grid();
-	draw_triangle();
-	draw_cube();
+	//draw_grid();
+	//draw_triangle();
+	//draw_cube();
+	draw_earth( app.shaders.earth_shader );
+	//draw_atmosphere( app.shaders.atmosphere_shader );
+	draw_shadow_map_debug();
 
 	end_frame();
 
@@ -151,6 +140,9 @@ void draw(void)
 
 int main(int argc, char* argv[])
 {
+	memset(&app, 0, sizeof(application_t));
+	app.framebuffers.current = nullptr;
+
 	if (init_window() != 0) return 1;
 	if (init_shaders() != 0) return 1;
 	if (init_camera() != 0) return 1;
@@ -158,15 +150,18 @@ int main(int argc, char* argv[])
 
 	setup_grid();
 	setup_cube();
+	setup_earth();
+	setup_shadow_map_debug();
 
 #ifdef __EMSCRIPTEN__
 	emscripten_set_main_loop(draw, 0, 1);
 #else
-	while (!glfwWindowShouldClose(g_window))
+	while (!glfwWindowShouldClose(app.g_window))
 	{
 		draw();
 	}
 #endif
 
+	memset(&app, 0, sizeof(application_t));
 	return 0;
 }

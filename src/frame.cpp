@@ -1,20 +1,25 @@
 #include "local.h"
 #include <iostream>
 
-void begin_frame(void)
+void prepare_frame(void)
 {
-	if (!camera.mouse_moving) {
-		glfwSetCursorPos(g_window, screen_center.x, screen_center.y);
-		camera.ignore_next_mouse_event = true;
+	if (!app.camera.mouse_moving) {
+		glfwSetCursorPos(app.g_window, screen_center.x, screen_center.y);
+		app.camera.ignore_next_mouse_event = true;
 	}
 
 	// input event handling
 	glfwPollEvents();
-	process_keyboard(g_window);
+	process_keyboard(app.g_window);
 
-	bind_fbo(&fbo);
+	app.time = glfwGetTime();
+}
 
-	renderer.view = get_view_matrix();
+void begin_frame(void)
+{
+	bind_fbo(&app.framebuffers.main);
+
+	app.renderer.view = get_view_matrix();
 }
 
 void end_frame(void)
@@ -26,13 +31,13 @@ void end_frame(void)
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	render_fbo(&fbo);
+	render_fbo(&app.framebuffers.main);
 
-	glfwSwapBuffers(g_window);
+	glfwSwapBuffers(app.g_window);
 
 	GLenum err = glGetError();
 	if (err != GL_NO_ERROR) {
 		std::cerr << "OpenGL Error: " << err << std::endl;
 	}
-	//glfwMakeContextCurrent(g_window);
+	//glfwMakeContextCurrent(app.g_window);
 }
