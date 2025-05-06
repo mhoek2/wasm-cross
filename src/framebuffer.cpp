@@ -57,19 +57,54 @@ static framebuffer_t create_shadow_fbo( void )
 
 	glGenTextures(1, &result.attachment);
 	glBindTexture(GL_TEXTURE_2D, result.attachment);
+
+#ifdef __EMSCRIPTEN__
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16,
+		SHADOW_RES, SHADOW_RES, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, nullptr);
+#else
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
-				 SHADOW_RES, SHADOW_RES, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+		SHADOW_RES, SHADOW_RES, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+#endif
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
+#ifndef __EMSCRIPTEN__
 	float borderColor[] = {1.0, 1.0, 1.0, 1.0};
 	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
+#endif
 
+	// why even?
 	glBindFramebuffer(GL_FRAMEBUFFER, result.fbo); // ?
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, result.attachment, 0);
+
+	// Check framebuffer status
+	GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (status != GL_FRAMEBUFFER_COMPLETE) {
+		switch (status) {
+		case GL_FRAMEBUFFER_UNSUPPORTED:
+			std::cerr << "Framebuffer is unsupported." << std::endl;
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+			std::cerr << "Framebuffer incomplete: Attachment not complete." << std::endl;
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+			std::cerr << "Framebuffer incomplete: Missing attachment." << std::endl;
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
+			std::cerr << "Framebuffer incomplete: Missing draw buffer." << std::endl;
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+			std::cerr << "Framebuffer incomplete: Missing read buffer." << std::endl;
+			break;
+		default:
+			std::cerr << "Framebuffer incomplete: Unknown error." << std::endl;
+			break;
+		}
+	}
+
 #ifndef __EMSCRIPTEN__
 	glDrawBuffer(GL_NONE); // no color
 #endif
