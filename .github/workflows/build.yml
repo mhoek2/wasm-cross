@@ -27,12 +27,12 @@ jobs:
         run: |
           sed -i '1s/^\xEF\xBB\xBF//' src/glsl/*.*
           emcc src/main.cpp src/shader.cpp src/frame.cpp src/camera.cpp src/framebuffer.cpp src/debug.cpp src/earth.cpp \
-            -o build-wasm/index.html \ 
+            -o build-wasm/index.html \
             -s FULL_ES3=1 -s USE_GLFW=3 \
             --preload-file src/glsl \
             --preload-file assets \
             -I./external-wasm \
-            -s ALLOW_MEMORY_GROWTH
+            -s ALLOW_MEMORY_GROWTH=1
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
