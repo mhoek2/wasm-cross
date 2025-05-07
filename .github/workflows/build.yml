@@ -1,4 +1,4 @@
-name: Build and Deploy Docs
+name: build
 
 on:
   push:
@@ -88,7 +88,7 @@ jobs:
           if-no-files-found: error
 
   create-release:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/cicd'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: [build-windows]
     runs-on: ubuntu-latest
     steps:
