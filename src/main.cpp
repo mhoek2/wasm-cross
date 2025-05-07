@@ -128,7 +128,7 @@ void draw(void)
 	//draw_cube();
 	draw_earth( app.shaders.earth_shader );
 	//draw_atmosphere( app.shaders.atmosphere_shader );
-	draw_shadow_map_debug();
+	//draw_shadow_map_debug();
 
 	end_frame();
 
