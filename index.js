@@ -7289,6 +7289,10 @@ function dbg(text) {
 
   var _glfwSetCursorPosCallback = (winid, cbfun) => GLFW.setCursorPosCallback(winid, cbfun);
 
+  var _glfwSetInputMode = (winid, mode, value) => {
+      GLFW.setInputMode(winid, mode, value);
+    };
+
   var _glfwSwapBuffers = (winid) => GLFW.swapBuffers(winid);
 
   var _glfwTerminate = () => {
@@ -7901,6 +7905,7 @@ var wasmImports = {
   glfwPollEvents: _glfwPollEvents,
   glfwSetCursorPos: _glfwSetCursorPos,
   glfwSetCursorPosCallback: _glfwSetCursorPosCallback,
+  glfwSetInputMode: _glfwSetInputMode,
   glfwSwapBuffers: _glfwSwapBuffers,
   glfwTerminate: _glfwTerminate,
   strftime_l: _strftime_l
