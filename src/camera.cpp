@@ -98,4 +98,7 @@ void process_keyboard( GLFWwindow* window ) {
         app.camera.camera_pos -= app.camera.camera_right * velocity;
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         app.camera.camera_pos += app.camera.camera_right * velocity;
+
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        init_camera();
 }
