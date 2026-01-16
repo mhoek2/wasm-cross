@@ -8,7 +8,7 @@
 #ifdef __EMSCRIPTEN__
 #define SHADER_PATH "src/glsl/"
 #else
-#define SHADER_PATH 
+#define SHADER_PATH "glsl/"
 #endif
 
 #define LOAD_SHADER( _shader, _name ) \

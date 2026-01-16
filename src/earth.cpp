@@ -33,7 +33,7 @@ const float normal_scale = 1.91f;
 #ifdef __EMSCRIPTEN__
 #define ASSETS_PATH "assets/"
 #else
-#define ASSETS_PATH
+#define ASSETS_PATH "assets/"
 #endif
 
 #define LOAD_TEXTURE( _name ) \

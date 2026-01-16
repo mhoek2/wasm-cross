@@ -129,7 +129,17 @@ endif()
 add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${CMAKE_SOURCE_DIR}/src/glsl"
-        "$<TARGET_FILE_DIR:${TARGET_NAME}>"
+        "$<TARGET_FILE_DIR:${TARGET_NAME}>/glsl"
+)
+
+# ------------------------------------------------------------------------------
+# ASSETS
+# ------------------------------------------------------------------------------
+
+add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/assets"
+        "$<TARGET_FILE_DIR:${TARGET_NAME}>/assets"
 )
 
 # ------------------------------------------------------------------------------

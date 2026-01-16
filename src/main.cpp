@@ -28,7 +28,9 @@ static int init_window( void ) {
 	}
 	glfwMakeContextCurrent( app.g_window );
 
-	//glfwSetInputMode( app.g_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
+	glfwSetInputMode( app.g_window, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
+	//glfwSetInputMode(app.g_window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
 	glfwSetCursorPosCallback( app.g_window, mouse_callback );
 
 #ifndef __EMSCRIPTEN__
