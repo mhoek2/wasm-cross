@@ -114,8 +114,6 @@ typedef struct {
 		GLuint heightmap_tex;
 		GLuint aomap_tex;
 		GLuint normalmap_tex;
-		GLuint metallicmap_tex;
-		GLuint roughnessmap_tex;
 		GLuint specularmap_tex;
 	} earth;
 

@@ -17,8 +17,6 @@ uniform sampler2D u_shadowMap;
 uniform sampler2D u_heightmap;
 uniform sampler2D u_normalMap;
 uniform sampler2D u_aoMap;    // Ambient Occlusion map
-uniform sampler2D u_metallicMap;
-uniform sampler2D u_roughnessMap;
 uniform sampler2D u_nightMap;
 uniform sampler2D u_specularMap;
 

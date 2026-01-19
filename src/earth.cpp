@@ -226,15 +226,13 @@ void setup_earth( void )
     free(earth_mesh.normals);
     free(earth_mesh.indices);
 
-    app.earth.colormap_tex = LOAD_TEXTURE("earth_daymap.jpg");
+    app.earth.colormap_tex = LOAD_TEXTURE("earth_daymap_pot.jpg");
     //app.earth.nightmap_tex = LOAD_TEXTURE(ASSETS_PATH "earth_nightmap.jpg");
     app.earth.nightmap_tex = LOAD_TEXTURE("earth_nightmap_l.jpg");
     //app.earth.heightmap_tex = LOAD_TEXTURE(ASSETS_PATH "earth_heightmap.png");
     app.earth.heightmap_tex = LOAD_TEXTURE("earth_bump.jpg");
     app.earth.normalmap_tex = LOAD_TEXTURE("earth_normal.png");
     app.earth.aomap_tex = LOAD_TEXTURE("earth_ao.png");
-    app.earth.metallicmap_tex = LOAD_TEXTURE("earth_metallic.png");
-    app.earth.roughnessmap_tex = LOAD_TEXTURE("earth_roughness.png");
     app.earth.specularmap_tex = LOAD_TEXTURE("earth_specular.jpg");
 
     glBindVertexArray(0);
@@ -305,21 +303,13 @@ void draw_earth( GLuint shader )
     glBindTexture(GL_TEXTURE_2D, app.earth.aomap_tex);
     glUniform1i(glGetUniformLocation(shader, "u_aoMap"), 4);
 
-    glActiveTexture(GL_TEXTURE5);
-    glBindTexture(GL_TEXTURE_2D, app.earth.metallicmap_tex);
-    glUniform1i(glGetUniformLocation(shader, "u_metallicMap"), 5);
-
-    glActiveTexture(GL_TEXTURE6);
-    glBindTexture(GL_TEXTURE_2D, app.earth.roughnessmap_tex);
-    glUniform1i(glGetUniformLocation(shader, "u_roughnessMap"), 6);
-
     glActiveTexture(GL_TEXTURE7);
     glBindTexture(GL_TEXTURE_2D, app.earth.nightmap_tex);
-    glUniform1i(glGetUniformLocation(shader, "u_nightMap"), 7);
+    glUniform1i(glGetUniformLocation(shader, "u_nightMap"), 5);
 
     glActiveTexture(GL_TEXTURE8);
     glBindTexture(GL_TEXTURE_2D, app.earth.specularmap_tex);
-    glUniform1i(glGetUniformLocation(shader, "u_specularMap"), 8);
+    glUniform1i(glGetUniformLocation(shader, "u_specularMap"), 6);
 
     glBindVertexArray(app.earth.vao);
     glDrawElements(GL_TRIANGLES, earth_mesh.index_count, GL_UNSIGNED_INT, 0);

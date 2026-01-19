@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - android-gles
   pull_request:
     branches:
       - main
@@ -36,7 +37,7 @@ jobs:
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
-        if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/android-gles'
         with:
           github_token: ${{ secrets.GH_TOKEN }}
           publish_dir: ./build-wasm
